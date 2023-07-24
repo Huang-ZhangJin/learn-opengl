@@ -7,7 +7,11 @@ cd build
 cmake ..
 cmake --build
 cd ..
+
+run on windows:
+cmake --build .; ./src/Debug/main.exe
 ```
+
 ### OpenGL
 
 versioin: 4.6
@@ -16,4 +20,3 @@ versioin: 4.6
 [MIT License](http://opensource.org/licenses/MIT)
 
 
-cmake --build .; ./src/Debug/main.exe
