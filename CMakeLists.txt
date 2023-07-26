@@ -17,6 +17,7 @@ set(MAIN_INCLUDE
   ${PROJECT_SOURCE_DIR}/external/glfw/include/
   ${PROJECT_SOURCE_DIR}/external/stb/
   ${PROJECT_SOURCE_DIR}/external/glm/
+  ${PROJECT_SOURCE_DIR}/include/
 )
 set(MAIN_LIBRARY
   glfw
@@ -24,3 +25,4 @@ set(MAIN_LIBRARY
 )
 
 add_subdirectory(src)
+include_directories(include)
