@@ -36,7 +36,8 @@ GLfloat deltaTime = 0.0f;   // 当前帧遇上一帧的时间差
 GLfloat lastFrame = 0.0f;   // 上一帧的时间
 
 // lighting
-glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
+// glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
+glm::vec3 lightPos(0.0f, 1.0f, 2.0f);
 
 // The MAIN function, from here we start the application and run the game loop
 int main()
@@ -191,19 +192,48 @@ int main()
         // glClear(GL_COLOR_BUFFER_BIT);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        lightPos.x = 1.0f + sin(glfwGetTime()) * 2.0f;
-        lightPos.y = sin(glfwGetTime() / 2.0f) * 1.0f;
+        // lightPos.x = 1.0f + sin(glfwGetTime()) * 2.0f;
+        // lightPos.y = sin(glfwGetTime() / 2.0f) * 1.0f;
+        glm::vec3 lightColor; lightColor.x = sin(glfwGetTime() * 2.0f);
+        lightColor.y = sin(glfwGetTime() * 0.7f);
+        lightColor.z = sin(glfwGetTime() * 1.3f);
+
+        glm::vec3 diffuseColor = lightColor * glm::vec3(0.5f);
+        glm::vec3 ambientColor = diffuseColor * glm::vec3(0.2f);
 
         /* ----------------------------------Using Cube Shader-------------------------------------------- */       
         lightingShader.Use();
         GLint objectColorLoc = glGetUniformLocation(lightingShader.Program, "objectColor");
         GLint lightColorLoc  = glGetUniformLocation(lightingShader.Program, "lightColor");
         GLint viewPosLoc  = glGetUniformLocation(lightingShader.Program, "viewPos");
-        GLint lightPosLoc  = glGetUniformLocation(lightingShader.Program, "lightPos");
+        // GLint lightPosLoc  = glGetUniformLocation(lightingShader.Program, "lightPos");
+        GLint lightPosLoc  = glGetUniformLocation(lightingShader.Program, "light.position");
         glUniform3f(objectColorLoc, 1.0f, 0.5f, 0.31f);
         glUniform3f(lightColorLoc, 1.0f, 1.0f, 1.0f);
         glUniform3fv(viewPosLoc, 1, glm::value_ptr(camera.Position));
         glUniform3fv(lightPosLoc, 1, glm::value_ptr(lightPos));
+
+        GLint matAmbientLoc = glGetUniformLocation(lightingShader.Program, "material.ambient");
+        GLint matDiffuseLoc = glGetUniformLocation(lightingShader.Program, "material.diffuse");
+        GLint matSpecularLoc = glGetUniformLocation(lightingShader.Program, "material.specular");
+        GLint matShineLoc = glGetUniformLocation(lightingShader.Program, "material.shininess");
+
+        glUniform3f(matAmbientLoc, 0.0f, 0.1f, 0.06f);
+        glUniform3f(matDiffuseLoc, 0.0f, 0.50980392f, 0.50980392f);
+        glUniform3f(matSpecularLoc, 0.50196078f, 0.50196078f, 0.50196078f);
+        glUniform1f(matShineLoc, 32.0f);
+
+        GLint lightAmbientLoc = glGetUniformLocation(lightingShader.Program, "light.ambient");
+        GLint lightDiffuseLoc = glGetUniformLocation(lightingShader.Program, "light.diffuse");
+        GLint lightSpecularLoc = glGetUniformLocation(lightingShader.Program, "light.specular");
+
+        // glUniform3f(lightAmbientLoc, 0.2f, 0.2f, 0.2f);
+        // glUniform3f(lightDiffuseLoc, 0.5f, 0.5f, 0.5f);// 让我们把这个光调暗一点，这样会看起来更自然
+        glUniform3f(lightAmbientLoc,  1.0f, 1.0f, 1.0f);
+        glUniform3f(lightDiffuseLoc,  1.0f, 1.0f, 1.0f);
+        glUniform3f(lightSpecularLoc, 1.0f, 1.0f, 1.0f);
+        // glUniform3f(lightAmbientLoc, ambientColor.x, ambientColor.y, ambientColor.z);
+        // glUniform3f(lightDiffuseLoc, diffuseColor.x, diffuseColor.y, diffuseColor.z);
 
         // Create transformations
         glm::mat4 model(1.0f);
