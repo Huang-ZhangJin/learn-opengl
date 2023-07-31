@@ -182,13 +182,11 @@ int main()
     // -----------------------------------------------------------------------------
     unsigned int diffuseMap = loadTexture("F:/learn-opengl/assets/container2.png");
     unsigned int specularMap = loadTexture("F:/learn-opengl/assets/container2_specular.png");
-    unsigned int emissionMap = loadTexture("F:/learn-opengl/assets/matrix.jpg");
 
     // Set texture units
     lightingShader.Use();
     glUniform1i(glGetUniformLocation(lightingShader.Program, "material.diffuse"), 0);
     glUniform1i(glGetUniformLocation(lightingShader.Program, "material.specular"), 1);
-    glUniform1i(glGetUniformLocation(lightingShader.Program, "material.emission"), 2);
 
     // Game loop
     while (!glfwWindowShouldClose(window))
@@ -215,9 +213,18 @@ int main()
         glUniform3fv(lightPosLoc, 1, glm::value_ptr(lightPos));
 
         // Set lights properties
+        // glUniform3f(glGetUniformLocation(lightingShader.Program, "light.direction"), -0.2f, -1.0f, -0.3f);
         glUniform3f(glGetUniformLocation(lightingShader.Program, "light.ambient"),  0.2f, 0.2f, 0.2f);
         glUniform3f(glGetUniformLocation(lightingShader.Program, "light.diffuse"),  0.5f, 0.5f, 0.5f);
         glUniform3f(glGetUniformLocation(lightingShader.Program, "light.specular"), 1.0f, 1.0f, 1.0f);
+        glUniform1f(glGetUniformLocation(lightingShader.Program, "light.constant"), 1.0f);
+        glUniform1f(glGetUniformLocation(lightingShader.Program, "light.linear"), 0.09);
+        glUniform1f(glGetUniformLocation(lightingShader.Program, "light.quadratic"), 0.032);
+        glUniform3f(glGetUniformLocation(lightingShader.Program, "light.direction"), camera.Front.x, camera.Front.y, camera.Front.z);
+        glUniform3fv(lightPosLoc, 1, glm::value_ptr(camera.Position));
+        glUniform1f(glGetUniformLocation(lightingShader.Program, "light.cutOff"), glm::cos(glm::radians(12.5f)));
+        glUniform1f(glGetUniformLocation(lightingShader.Program, "light.outerCutOff"), glm::cos(glm::radians(17.5f)));
+
         // Set material properties
         glUniform1f(glGetUniformLocation(lightingShader.Program, "material.shininess"), 64.0f);
 
@@ -239,13 +246,20 @@ int main()
         glBindTexture(GL_TEXTURE_2D, diffuseMap);
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, specularMap);
-        glActiveTexture(GL_TEXTURE2);
-        glBindTexture(GL_TEXTURE_2D, emissionMap);
 
         glBindVertexArray(cubeVAO);
         glm::mat4 model(1.0f);
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-        glDrawArrays(GL_TRIANGLES, 0, 36);
+        // glDrawArrays(GL_TRIANGLES, 0, 36);
+        for (GLuint i = 0; i<10; i++){
+            model = glm::mat4(1.0f);
+            model = glm::translate(model, cubePositions[i]);
+            GLfloat angle = 20.0f * i;
+            model = glm::rotate(model, angle, glm::vec3(1.0f, 0.3f, 0.5f));
+            glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
+
         glBindVertexArray(0);
 
         /* ----------------------------------Using lgiht Shader-------------------------------------------- */       
@@ -305,6 +319,10 @@ void do_movement()
         camera.ProcessKeyboard(LEFT, deltaTime);
     if(keys[GLFW_KEY_D])
         camera.ProcessKeyboard(RIGHT, deltaTime);
+    if(keys[GLFW_KEY_Q])
+        camera.ProcessKeyboard(UPP, deltaTime);
+    if(keys[GLFW_KEY_E])
+        camera.ProcessKeyboard(DOWNN, deltaTime);
 }
 
 bool firstMouse = true;
