@@ -4,15 +4,20 @@
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
+// #define STB_IMAGE_IMPLEMENTATION
+// #include <stb_image.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/string_cast.hpp>
 
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
+
 #include "shader.h"
 #include "glcamera.h"
+#include "model.h"
 
 
 // Function prototypes
@@ -85,6 +90,7 @@ int main()
     // Build and compile our shader program
     Shader lightingShader("F:/learn-opengl/src/colors.vs", "F:/learn-opengl/src/colors.frag");
     Shader lightcubeShader("F:/learn-opengl/src/light_cube.vs", "F:/learn-opengl/src/light_cube.frag");
+    Shader modelloadShader("F:/learn-opengl/src/model_load.vs", "F:/learn-opengl/src/model_load.frag");
 
     float vertices[] = {
         // positions          // normals           // texture coords
@@ -199,6 +205,11 @@ int main()
     lightingShader.Use();
     glUniform1i(glGetUniformLocation(lightingShader.Program, "material.diffuse"), 0);
     glUniform1i(glGetUniformLocation(lightingShader.Program, "material.specular"), 1);
+
+    // load models
+    // -----------
+    Model ourModel("F:/learn-opengl/assets/nanosuit/nanosuit.obj");
+
 
     // Game loop
     while (!glfwWindowShouldClose(window))
@@ -317,6 +328,21 @@ int main()
             glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
             glDrawArrays(GL_TRIANGLES, 0, 36);
         }
+
+
+        // Draw ourmodel
+        modelloadShader.Use();
+        modelLoc = glGetUniformLocation(modelloadShader.Program, "model");
+        viewLoc  = glGetUniformLocation(modelloadShader.Program, "view");
+        projectionLoc  = glGetUniformLocation(modelloadShader.Program, "projection");
+        // Set matrices
+        glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+        glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(0.0f, 0.0f, 1.0f)); // translate it down so it's at the center of the scene
+        model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));	// it's a bit too big for our scene, so scale it down
+        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+        ourModel.Draw(modelloadShader);
 
         glBindVertexArray(0);
 
