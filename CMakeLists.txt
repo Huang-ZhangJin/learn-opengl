@@ -11,6 +11,7 @@ option(GLFW_BUILD_EXAMPLES OFF)
 option(GLFW_BUILD_TESTS OFF)
 add_subdirectory(external/glfw)
 add_subdirectory(external/glad)
+add_subdirectory(external/assimp)
 
 set(MAIN_INCLUDE
   ${PROJECT_SOURCE_DIR}/external/glad/include/
@@ -18,10 +19,12 @@ set(MAIN_INCLUDE
   ${PROJECT_SOURCE_DIR}/external/stb/
   ${PROJECT_SOURCE_DIR}/external/glm/
   ${PROJECT_SOURCE_DIR}/include/
+  ${PROJECT_SOURCE_DIR}/external/assimp/
 )
 set(MAIN_LIBRARY
   glfw
   glad
+  assimp
 )
 
 add_subdirectory(src)

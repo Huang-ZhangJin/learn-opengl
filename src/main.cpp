@@ -88,9 +88,7 @@ int main()
     glEnable(GL_DEPTH_TEST);
 
     // Build and compile our shader program
-    Shader lightingShader("F:/learn-opengl/src/colors.vs", "F:/learn-opengl/src/colors.frag");
-    Shader lightcubeShader("F:/learn-opengl/src/light_cube.vs", "F:/learn-opengl/src/light_cube.frag");
-    Shader modelloadShader("F:/learn-opengl/src/model_load.vs", "F:/learn-opengl/src/model_load.frag");
+    Shader modelShader("F:/learn-opengl/src/model.vs", "F:/learn-opengl/src/model.frag");
 
     float vertices[] = {
         // positions          // normals           // texture coords
@@ -165,6 +163,16 @@ int main()
         glm::vec3(1.0f, 1.0, 0.0),
         glm::vec3(0.2f, 0.2f, 1.0f)
     };
+    float planeVertices[] = {
+        // positions          // texture Coords (note we set these higher than 1 (together with GL_REPEAT as texture wrapping mode). this will cause the floor texture to repeat)
+         5.0f, -0.5f,  5.0f,  2.0f, 0.0f,
+        -5.0f, -0.5f,  5.0f,  0.0f, 0.0f,
+        -5.0f, -0.5f, -5.0f,  0.0f, 2.0f,
+
+         5.0f, -0.5f,  5.0f,  2.0f, 0.0f,
+        -5.0f, -0.5f, -5.0f,  0.0f, 2.0f,
+         5.0f, -0.5f, -5.0f,  2.0f, 2.0f								
+    };
 
     GLuint VBO, cubeVAO;
     glGenVertexArrays(1, &cubeVAO);
@@ -182,15 +190,18 @@ int main()
     glEnableVertexAttribArray(2);
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8*sizeof(GLfloat), (GLvoid*)(6 * sizeof(GLfloat)));
 
-
-    GLuint lightCubeVAO;
-    glGenVertexArrays(1, &lightCubeVAO);
-    glBindVertexArray(lightCubeVAO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-
+    // plane VAO
+    unsigned int planeVAO, planeVBO;
+    glGenVertexArrays(1, &planeVAO);
+    glGenBuffers(1, &planeVBO);
+    glBindVertexArray(planeVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, planeVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(planeVertices), &planeVertices, GL_STATIC_DRAW);
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8*sizeof(GLfloat), (GLvoid*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    glBindVertexArray(0);
 
     glBindBuffer(GL_ARRAY_BUFFER, 0); // Note that this is allowed, the call to glVertexAttribPointer registered VBO as the currently bound vertex buffer object so afterwards we can safely unbind
     glBindVertexArray(0); // Unbind VAO (it's always a good thing to unbind any buffer/array to prevent strange bugs)
@@ -198,18 +209,11 @@ int main()
 
     // load textures (we now use a utility function to keep the code more organized)
     // -----------------------------------------------------------------------------
-    unsigned int diffuseMap = loadTexture("F:/learn-opengl/assets/container2.png");
-    unsigned int specularMap = loadTexture("F:/learn-opengl/assets/container2_specular.png");
+    unsigned int cubeTexture = loadTexture("F:/learn-opengl/assets/marble.jpg");
+    unsigned int floorTexture = loadTexture("F:/learn-opengl/assets/metal.png");
 
-    // Set texture units
-    lightingShader.Use();
-    glUniform1i(glGetUniformLocation(lightingShader.Program, "material.diffuse"), 0);
-    glUniform1i(glGetUniformLocation(lightingShader.Program, "material.specular"), 1);
-
-    // load models
-    // -----------
-    Model ourModel("F:/learn-opengl/assets/nanosuit/nanosuit.obj");
-
+    modelShader.Use();
+    // glUniform1i(glGetUniformLocation(modelShader.Program, "texture1"), 0); 
 
     // Game loop
     while (!glfwWindowShouldClose(window))
@@ -225,155 +229,50 @@ int main()
 
         // Render
         // Clear the colorbuffer
-        // glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-        glClearColor(0.75f, 0.52f, 0.3f, 1.0f);
+        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        /* ----------------------------------Using Cube Shader-------------------------------------------- */       
-        lightingShader.Use();
-        GLint viewPosLoc  = glGetUniformLocation(lightingShader.Program, "viewPos");
-        GLint lightPosLoc  = glGetUniformLocation(lightingShader.Program, "light.position");
-        glUniform3fv(viewPosLoc, 1, glm::value_ptr(camera.Position));
-        glUniform3fv(lightPosLoc, 1, glm::value_ptr(lightPos));
-
-        // Set material properties
-        glUniform1f(glGetUniformLocation(lightingShader.Program, "material.shininess"), 32.0f);
-
-        // Set lights properties
-        glUniform3f(glGetUniformLocation(lightingShader.Program, "light.ambient"),  0.2f, 0.2f, 0.2f);
-        
-         /*
-           Here we set all the uniforms for the 5/6 types of lights we have. We have to set them manually and index 
-           the proper PointLight struct in the array to set each uniform variable. This can be done more code-friendly
-           by defining light types as classes and set their values in there, or by using a more efficient uniform approach
-           by using 'Uniform buffer objects', but that is something we'll discuss in the 'Advanced GLSL' tutorial.
-        */
-        // Directional light
-        glUniform3f(glGetUniformLocation(lightingShader.Program, "dirLight.direction"), -0.2f, -1.0f, -0.3f);		
-        glUniform3f(glGetUniformLocation(lightingShader.Program, "dirLight.ambient"), 0.3f, 0.24f, 0.14f);		
-        glUniform3f(glGetUniformLocation(lightingShader.Program, "dirLight.diffuse"), 0.7f, 0.42f, 0.26f); 
-        glUniform3f(glGetUniformLocation(lightingShader.Program, "dirLight.specular"), 0.5f, 0.5f, 0.5f);
-        // Point light 1
-        glUniform3f(glGetUniformLocation(lightingShader.Program, "pointLights[0].position"), pointLightPositions[0].x, pointLightPositions[0].y, pointLightPositions[0].z);		
-        glUniform3f(glGetUniformLocation(lightingShader.Program, "pointLights[0].ambient"), pointLightColors[0].x * 0.1,  pointLightColors[0].y * 0.1,  pointLightColors[0].z * 0.1);		
-        glUniform3f(glGetUniformLocation(lightingShader.Program, "pointLights[0].diffuse"), pointLightColors[0].x,  pointLightColors[0].y,  pointLightColors[0].z); 
-        glUniform3f(glGetUniformLocation(lightingShader.Program, "pointLights[0].specular"), pointLightColors[0].x,  pointLightColors[0].y,  pointLightColors[0].z);
-        glUniform1f(glGetUniformLocation(lightingShader.Program, "pointLights[0].constant"), 1.0f);
-        glUniform1f(glGetUniformLocation(lightingShader.Program, "pointLights[0].linear"), 0.09);
-        glUniform1f(glGetUniformLocation(lightingShader.Program, "pointLights[0].quadratic"), 0.032);		
-        // Point light 2
-        glUniform3f(glGetUniformLocation(lightingShader.Program, "pointLights[1].position"), pointLightPositions[1].x, pointLightPositions[1].y, pointLightPositions[1].z);		
-        glUniform3f(glGetUniformLocation(lightingShader.Program, "pointLights[1].ambient"), pointLightColors[1].x * 0.1,  pointLightColors[1].y * 0.1,  pointLightColors[1].z * 0.1);		
-        glUniform3f(glGetUniformLocation(lightingShader.Program, "pointLights[1].diffuse"), pointLightColors[1].x,  pointLightColors[1].y,  pointLightColors[1].z); 
-        glUniform3f(glGetUniformLocation(lightingShader.Program, "pointLights[1].specular"), pointLightColors[1].x,  pointLightColors[1].y,  pointLightColors[1].z);
-        glUniform1f(glGetUniformLocation(lightingShader.Program, "pointLights[1].constant"), 1.0f);
-        glUniform1f(glGetUniformLocation(lightingShader.Program, "pointLights[1].linear"), 0.09);
-        glUniform1f(glGetUniformLocation(lightingShader.Program, "pointLights[1].quadratic"), 0.032);		
-        // Point light 3
-        glUniform3f(glGetUniformLocation(lightingShader.Program, "pointLights[2].position"), pointLightPositions[2].x, pointLightPositions[2].y, pointLightPositions[2].z);		
-        glUniform3f(glGetUniformLocation(lightingShader.Program, "pointLights[2].ambient"), pointLightColors[2].x * 0.1,  pointLightColors[2].y * 0.1,  pointLightColors[2].z * 0.1);		
-        glUniform3f(glGetUniformLocation(lightingShader.Program, "pointLights[2].diffuse"), pointLightColors[2].x,  pointLightColors[2].y,  pointLightColors[2].z); 
-        glUniform3f(glGetUniformLocation(lightingShader.Program, "pointLights[2].specular") ,pointLightColors[2].x,  pointLightColors[2].y,  pointLightColors[2].z);
-        glUniform1f(glGetUniformLocation(lightingShader.Program, "pointLights[2].constant"), 1.0f);
-        glUniform1f(glGetUniformLocation(lightingShader.Program, "pointLights[2].linear"), 0.09);
-        glUniform1f(glGetUniformLocation(lightingShader.Program, "pointLights[2].quadratic"), 0.032);		
-        // Point light 4
-        glUniform3f(glGetUniformLocation(lightingShader.Program, "pointLights[3].position"), pointLightPositions[3].x, pointLightPositions[3].y, pointLightPositions[3].z);		
-        glUniform3f(glGetUniformLocation(lightingShader.Program, "pointLights[3].ambient"), pointLightColors[3].x * 0.1,  pointLightColors[3].y * 0.1,  pointLightColors[3].z * 0.1);		
-        glUniform3f(glGetUniformLocation(lightingShader.Program, "pointLights[3].diffuse"), pointLightColors[3].x,  pointLightColors[3].y,  pointLightColors[3].z); 
-        glUniform3f(glGetUniformLocation(lightingShader.Program, "pointLights[3].specular"), pointLightColors[3].x,  pointLightColors[3].y,  pointLightColors[3].z);
-        glUniform1f(glGetUniformLocation(lightingShader.Program, "pointLights[3].constant"), 1.0f);
-        glUniform1f(glGetUniformLocation(lightingShader.Program, "pointLights[3].linear"), 0.09);
-        glUniform1f(glGetUniformLocation(lightingShader.Program, "pointLights[3].quadratic"), 0.032);		
-        // SpotLight
-        glUniform3f(glGetUniformLocation(lightingShader.Program, "spotLight.position"), camera.Position.x, camera.Position.y, camera.Position.z);	
-        glUniform3f(glGetUniformLocation(lightingShader.Program, "spotLight.direction"), camera.Front.x, camera.Front.y, camera.Front.z);
-        glUniform3f(glGetUniformLocation(lightingShader.Program, "spotLight.ambient"), 0.0f, 0.0f, 0.0f);		
-        glUniform3f(glGetUniformLocation(lightingShader.Program, "spotLight.diffuse"), 0.8f, 0.8f, 0.0f); 
-        glUniform3f(glGetUniformLocation(lightingShader.Program, "spotLight.specular"), 0.8f, 0.8f, 0.0f);
-        glUniform1f(glGetUniformLocation(lightingShader.Program, "spotLight.constant"), 1.0f);
-        glUniform1f(glGetUniformLocation(lightingShader.Program, "spotLight.linear"), 0.09);
-        glUniform1f(glGetUniformLocation(lightingShader.Program, "spotLight.quadratic"), 0.032);				
-        glUniform1f(glGetUniformLocation(lightingShader.Program, "spotLight.cutOff"), glm::cos(glm::radians(12.5f)));
-        glUniform1f(glGetUniformLocation(lightingShader.Program, "spotLight.outerCutOff"), glm::cos(glm::radians(13.0f)));
-
+        // Draw ourmodel
+        modelShader.Use();
+        GLuint modelLoc = glGetUniformLocation(modelShader.Program, "model");
+        GLuint viewLoc  = glGetUniformLocation(modelShader.Program, "view");
+        GLuint projectionLoc  = glGetUniformLocation(modelShader.Program, "projection");
+        // Set matrices
         // Create transformations
         glm::mat4 view(1.0f);
         view = camera.GetViewMatrix();
         // Projection 
         glm::mat4 projection(1.0f);
         projection = glm::perspective(glm::radians(camera.Zoom), (GLfloat)WIDTH / (GLfloat)HEIGHT, 0.1f, 100.0f);
-
-        GLint modelLoc = glGetUniformLocation(lightingShader.Program, "model");
-        GLint viewLoc = glGetUniformLocation(lightingShader.Program, "view");
         glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
-        GLint projectionLoc = glGetUniformLocation(lightingShader.Program, "projection");
         glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
+        glm::mat4 model = glm::mat4(1.0f);
 
-        // Bind diffuse map
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, diffuseMap);
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, specularMap);
-
+         // cubes
         glBindVertexArray(cubeVAO);
-        glm::mat4 model(1.0f);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, cubeTexture); 	
+        model = glm::translate(model, glm::vec3(-1.0f, 0.0f, -1.0f));
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-        // glDrawArrays(GL_TRIANGLES, 0, 36);
-        for (GLuint i = 0; i<10; i++){
-            model = glm::mat4(1.0f);
-            model = glm::translate(model, cubePositions[i]);
-            GLfloat angle = 20.0f * i;
-            model = glm::rotate(model, angle, glm::vec3(1.0f, 0.3f, 0.5f));
-            glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-            glDrawArrays(GL_TRIANGLES, 0, 36);
-        }
-
-
-        // Draw ourmodel
-        modelloadShader.Use();
-        modelLoc = glGetUniformLocation(modelloadShader.Program, "model");
-        viewLoc  = glGetUniformLocation(modelloadShader.Program, "view");
-        projectionLoc  = glGetUniformLocation(modelloadShader.Program, "projection");
-        // Set matrices
-        glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
-        glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
+        glDrawArrays(GL_TRIANGLES, 0, 36);
         model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(0.0f, 0.0f, 1.0f)); // translate it down so it's at the center of the scene
-        model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));	// it's a bit too big for our scene, so scale it down
+        model = glm::translate(model, glm::vec3(2.0f, 0.0f, 0.0f));
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-        ourModel.Draw(modelloadShader);
-
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+        // floor
+        glBindVertexArray(planeVAO);
+        glBindTexture(GL_TEXTURE_2D, floorTexture);
+        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(glm::mat4(1.0f)));
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        
+        
         glBindVertexArray(0);
-
-        /* ----------------------------------Using lgiht Shader-------------------------------------------- */       
-        // Also draw the lamp object, again binding the appropriate shader
-        lightcubeShader.Use();
-        // Get location objects for the matrices on the lamp shader (these could be different on a different shader)
-        modelLoc = glGetUniformLocation(lightcubeShader.Program, "model");
-        viewLoc  = glGetUniformLocation(lightcubeShader.Program, "view");
-        projectionLoc  = glGetUniformLocation(lightcubeShader.Program, "projection");
-        // Set matrices
-        glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
-        glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
-        // Draw the light object (using light's vertex attributes)
-        glBindVertexArray(lightCubeVAO);
-        for (int i = 0; i<4; i++){
-            model = glm::mat4(1.0f);
-            model = glm::translate(model, pointLightPositions[i]);
-            model = glm::scale(model, glm::vec3(0.2f)); // Make it a smaller cube
-            glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-            glDrawArrays(GL_TRIANGLES, 0, 36);
-        }
-        // glDrawArrays(GL_TRIANGLES, 0, 36);
-        glBindVertexArray(0);
-
         // Swap the screen buffers
         glfwSwapBuffers(window);
     }
     // Properly de-allocate all resources once they've outlived their purpose
     glDeleteVertexArrays(1, &cubeVAO);
-    glDeleteVertexArrays(1, &lightCubeVAO);
+    glDeleteVertexArrays(1, &planeVAO);
     glDeleteBuffers(1, &VBO);
     // Terminate GLFW, clearing any resources allocated by GLFW.
     glfwTerminate();
