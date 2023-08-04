@@ -86,8 +86,10 @@ int main()
 
     // configure global opengl state
     // -----------------------------
-    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_DEPTH_TEST); 
     glDepthFunc(GL_LESS);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     // Build and compile our shader program
     Shader modelShader("F:/learn-opengl/src/model.vs", "F:/learn-opengl/src/model.frag");
@@ -235,7 +237,7 @@ int main()
     // -----------------------------------------------------------------------------
     unsigned int cubeTexture = loadTexture("F:/learn-opengl/assets/marble.jpg");
     unsigned int floorTexture = loadTexture("F:/learn-opengl/assets/metal.png");
-    unsigned int transparentTexture = loadTexture("F:/learn-opengl/assets/grass.png");
+    unsigned int transparentTexture = loadTexture("F:/learn-opengl/assets/window.png");
 
      // transparent vegetation locations
     // --------------------------------
@@ -262,6 +264,14 @@ int main()
         // Check if any events have been activiated (key pressed, mouse moved etc.) and call corresponding response functions
         glfwPollEvents();
         do_movement();
+
+        std::map<float, glm::vec3> sorted;
+        for (unsigned int i = 0; i < vegetation.size(); i++)
+        {
+            float distance = glm::length(camera.Position - vegetation[i]);
+            sorted[distance] = vegetation[i];
+        }
+
 
         // Render
         // Clear the colorbuffer
@@ -300,16 +310,25 @@ int main()
         glDrawArrays(GL_TRIANGLES, 0, 36);
 
         // vegetation
+        // glBindVertexArray(transparentVAO);
+        // glBindTexture(GL_TEXTURE_2D, transparentTexture);
+        // for (unsigned int i = 0; i < vegetation.size(); i++)
+        // {
+        //     model = glm::mat4(1.0f);
+        //     model = glm::translate(model, vegetation[i]);
+        //     glUniformMatrix4fv(glGetUniformLocation(modelShader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
+        //     glDrawArrays(GL_TRIANGLES, 0, 6);
+        // }
+
         glBindVertexArray(transparentVAO);
         glBindTexture(GL_TEXTURE_2D, transparentTexture);
-        for (unsigned int i = 0; i < vegetation.size(); i++)
+        for (std::map<float, glm::vec3>::reverse_iterator it = sorted.rbegin(); it != sorted.rend(); ++it)
         {
             model = glm::mat4(1.0f);
-            model = glm::translate(model, vegetation[i]);
+            model = glm::translate(model, it->second);
             glUniformMatrix4fv(glGetUniformLocation(modelShader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
             glDrawArrays(GL_TRIANGLES, 0, 6);
         }
-
     
         glBindVertexArray(0);
         // Swap the screen buffers
