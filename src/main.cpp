@@ -185,7 +185,7 @@ int main()
         glBindTexture(GL_TEXTURE_2D, floorTexture);
         glDrawArrays(GL_TRIANGLES, 0, 6);
 
-        // std::cout << (blinn ? "Blinn-Phong" : "Phong") << std::endl;
+        std::cout << (blinn ? "Blinn-Phong" : "Phong") << std::endl;
 
         glBindVertexArray(0);
         // Swap the screen buffers
@@ -242,12 +242,12 @@ void do_movement()
         camera.ProcessKeyboard(UPP, deltaTime);
     if(keys[GLFW_KEY_E])
         camera.ProcessKeyboard(DOWNN, deltaTime);
-    // if(keys[GLFW_KEY_B] && !blinnKeyPressed)
-    //     blinn = !blinn;
-    //     blinnKeyPressed = true;
-    // if(keys[GLFW_KEY_B] && !blinnKeyPressed)
-    //     blinn = !blinn;
-    //     blinnKeyPressed = false;
+    if(keys[GLFW_KEY_B] && !blinnKeyPressed)
+        blinn = !blinn;
+        blinnKeyPressed = true;
+    if(keys[GLFW_KEY_B] && !blinnKeyPressed)
+        blinn = !blinn;
+        blinnKeyPressed = false;
 
 }
 
