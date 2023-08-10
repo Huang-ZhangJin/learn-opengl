@@ -27,5 +27,6 @@ set(MAIN_LIBRARY
   assimp
 )
 
-add_subdirectory(src)
+# add_subdirectory(src)
+add_subdirectory(src_advanced_lighting)
 include_directories(include)
