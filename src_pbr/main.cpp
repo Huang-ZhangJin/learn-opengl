@@ -89,25 +89,31 @@ int main()
 
     // build and compile shaders
     // -------------------------
-    Shader shader((BASE_PATH + "1.1.pbr.vs").c_str(), (BASE_PATH + "1.1.pbr.fs").c_str());
+    // Shader shader((BASE_PATH + "1.1.pbr.vs").c_str(), (BASE_PATH + "1.1.pbr.fs").c_str());
+    Shader shader((BASE_PATH + "1.2.pbr.vs").c_str(), (BASE_PATH + "1.2.pbr.fs").c_str());
 
     shader.use();
-    shader.setVec3("albedo", 0.5f, 0.0f, 0.0f);
-    shader.setFloat("ao", 1.0f);
+    shader.setInt("albedoMap", 0);
+    shader.setInt("normalMap", 1);
+    shader.setInt("metallicMap", 2);
+    shader.setInt("roughnessMap", 3);
+    shader.setInt("aoMap", 4);
+
+    // load PBR material textures
+    // --------------------------
+    unsigned int albedo    = loadTexture((ASSETS_PATH + "pbr/rusted_iron/albedo.png").c_str());
+    unsigned int normal    = loadTexture((ASSETS_PATH + "pbr/rusted_iron/normal.png").c_str());
+    unsigned int metallic  = loadTexture((ASSETS_PATH + "pbr/rusted_iron/metallic.png").c_str());
+    unsigned int roughness = loadTexture((ASSETS_PATH + "pbr/rusted_iron/roughness.png").c_str());
+    unsigned int ao        = loadTexture((ASSETS_PATH + "pbr/rusted_iron/ao.png").c_str());
 
     // lights
     // ------
     glm::vec3 lightPositions[] = {
-        glm::vec3(-10.0f,  10.0f, 10.0f),
-        glm::vec3( 10.0f,  10.0f, 10.0f),
-        glm::vec3(-10.0f, -10.0f, 10.0f),
-        glm::vec3( 10.0f, -10.0f, 10.0f),
+        glm::vec3(0.0f, 0.0f, 10.0f),
     };
     glm::vec3 lightColors[] = {
-        glm::vec3(300.0f, 300.0f, 300.0f),
-        glm::vec3(300.0f, 300.0f, 300.0f),
-        glm::vec3(300.0f, 300.0f, 300.0f),
-        glm::vec3(300.0f, 300.0f, 300.0f)
+        glm::vec3(150.0f, 150.0f, 150.0f),
     };
     int nrRows    = 7;
     int nrColumns = 7;
@@ -142,6 +148,17 @@ int main()
         glm::mat4 view = camera.GetViewMatrix();
         shader.setMat4("view", view);
         shader.setVec3("camPos", camera.Position);
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, albedo);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, normal);
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, metallic);
+        glActiveTexture(GL_TEXTURE3);
+        glBindTexture(GL_TEXTURE_2D, roughness);
+        glActiveTexture(GL_TEXTURE4);
+        glBindTexture(GL_TEXTURE_2D, ao);
 
         // render rows*column number of spheres with varying metallic/roughness values scaled by rows and columns respectively
         glm::mat4 model = glm::mat4(1.0f);
