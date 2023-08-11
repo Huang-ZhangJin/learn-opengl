@@ -107,14 +107,15 @@ int main()
 
     // glEnable(GL_MULTISAMPLE); // enabled by default on some drivers, but not all so always enable to make sure
 
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    // glEnable(GL_BLEND);
+    // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 
     // Build and compile our shader program
     // -----------------------------
     // Shader screenShader("F:/learn-opengl/src/advanced_ligting.vs", "F:/learn-opengl/src/advanced_ligting.frag");
     // Shader screenShader("F:/learn-opengl/src_advanced_lighting/gamma_correction.vs", "F:/learn-opengl/src_advanced_lighting/gamma_correction.frag");
+    Shader shader("F:/learn-opengl/src_advanced_lighting/shadow_mapping.vs", "F:/learn-opengl/src_advanced_lighting/shadow_mapping.frag");
     Shader simpleDepthShader("F:/learn-opengl/src_advanced_lighting/shadow_mapping_depth.vs", "F:/learn-opengl/src_advanced_lighting/shadow_mapping_depth.frag");
     Shader debugDepthQuad("F:/learn-opengl/src_advanced_lighting/debug_quad.vs", "F:/learn-opengl/src_advanced_lighting/debug_quad_depth.frag");
 
@@ -230,6 +231,23 @@ int main()
         glViewport(0, 0, WIDTH, HEIGHT);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        // 2. render scene as normal using the generated depth/shadow map  
+        // --------------------------------------------------------------
+        shader.Use();
+        glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)WIDTH / (float)HEIGHT, 0.1f, 100.0f);
+        glm::mat4 view = camera.GetViewMatrix();
+        shader.setMat4("projection", projection);
+        shader.setMat4("view", view);
+        // set light uniforms
+        shader.setVec3("viewPos", camera.Position);
+        shader.setVec3("lightPos", lightPos);
+        shader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, woodTexture);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, depthMap);
+        renderScene(shader);
+
         // render Depth map to quad for visual debugging
         // ---------------------------------------------
         debugDepthQuad.Use();
@@ -237,7 +255,7 @@ int main()
         debugDepthQuad.setFloat("far_plane", far_plane);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, depthMap);
-        renderQuad();
+        // renderQuad();
 
 
         glBindVertexArray(0);
@@ -501,8 +519,10 @@ unsigned int loadTexture(char const * path, bool gammaCorrection)
         glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, dataFormat, GL_UNSIGNED_BYTE, data);
         glGenerateMipmap(GL_TEXTURE_2D);
 
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT); 
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT); 
+        // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, dataFormat == GL_RGBA ? GL_CLAMP_TO_EDGE : GL_REPEAT); // for this tutorial: use GL_CLAMP_TO_EDGE to prevent semi-transparent borders. Due to interpolation it takes texels from next repeat 
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, dataFormat == GL_RGBA ? GL_CLAMP_TO_EDGE : GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
