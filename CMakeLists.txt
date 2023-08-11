@@ -28,5 +28,6 @@ set(MAIN_LIBRARY
 )
 
 # add_subdirectory(src)
-add_subdirectory(src_advanced_lighting)
+# add_subdirectory(src_advanced_lighting)
+add_subdirectory(src_pbr)
 include_directories(include)
