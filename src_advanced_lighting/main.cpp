@@ -92,19 +92,26 @@ int main()
 
     // build and compile shaders
     // -------------------------
-    Shader shader((BASE_PATH+"4.normal_mapping.vs").c_str(), (BASE_PATH+"4.normal_mapping.fs").c_str());
+    // Shader shader((BASE_PATH+"4.normal_mapping.vs").c_str(), (BASE_PATH+"4.normal_mapping.fs").c_str());
+    // Shader shader((BASE_PATH+"5.1.parallax_mapping.vs").c_str(), (BASE_PATH+"5.1.parallax_mapping.fs").c_str());
+    Shader shader((BASE_PATH+"5.2.parallax_mapping.vs").c_str(), (BASE_PATH+"5.3.parallax_mapping.fs").c_str());
 
     // load textures
     // -------------
     // unsigned int woodTexture = loadTexture((ASSETS_PATH+"wood.png").c_str());
-    unsigned int diffuseMap = loadTexture((ASSETS_PATH+"brickwall.jpg").c_str());
-    unsigned int normalMap  = loadTexture((ASSETS_PATH+"brickwall_normal.jpg").c_str());
+    // unsigned int diffuseMap = loadTexture((ASSETS_PATH+"bricks2.jpg").c_str());
+    // unsigned int normalMap  = loadTexture((ASSETS_PATH+"bricks2_normal.jpg").c_str());
+    // unsigned int heightMap  = loadTexture((ASSETS_PATH+"bricks2_disp.jpg").c_str());
+    unsigned int diffuseMap = loadTexture((ASSETS_PATH+"toy_box_diffuse.png").c_str());
+    unsigned int normalMap  = loadTexture((ASSETS_PATH+"toy_box_normal.png").c_str());
+    unsigned int heightMap  = loadTexture((ASSETS_PATH+"toy_box_disp.png").c_str());
 
     // shader configuration
     // --------------------
     shader.use();
     shader.setInt("diffuseMap", 0);
     shader.setInt("normalMap", 1);
+    shader.setInt("depthMap", 1);
 
     // lighting info
     // -------------
@@ -145,6 +152,8 @@ int main()
         glBindTexture(GL_TEXTURE_2D, diffuseMap);
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, normalMap);
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, heightMap);
         renderQuad();
 
         // render light source (simply re-renders a smaller plane at the light's position for debugging/visualization)
