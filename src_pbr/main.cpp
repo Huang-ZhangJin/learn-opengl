@@ -100,6 +100,7 @@ int main()
     Shader backgroundShader((BASE_PATH + "2.1.1.background.vs").c_str(), (BASE_PATH + "2.1.1.background.fs").c_str());
 
     pbrShader.use();
+    pbrShader.setInt("irradianceMap", 0);
     pbrShader.setVec3("albedo", 0.5f, 0.0f, 0.0f);
     pbrShader.setFloat("ao", 1.0f);
 
