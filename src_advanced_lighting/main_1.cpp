@@ -31,14 +31,18 @@ unsigned int loadTexture(const char *path, bool gammaCorrection);
 void renderQuad();
 void renderCube();
 
+
 // settings
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
+// bool shadows = true;
+// bool shadowsKeyPressed = false;
 bool bloom = true;
 bool bloomKeyPressed = false;
 float exposure = 1.0f;
 
 // camera
+// Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
 Camera camera(glm::vec3(0.0f, 0.0f, 5.0f));
 float lastX = (float)SCR_WIDTH / 2.0;
 float lastY = (float)SCR_HEIGHT / 2.0;
@@ -89,25 +93,38 @@ int main()
     // configure global opengl state
     // -----------------------------
     glEnable(GL_DEPTH_TEST);
+    // glEnable(GL_CULL_FACE);
 
     // build and compile shaders
     // -------------------------
-    Shader shader((BASE_PATH+"7.bloom.vs").c_str(), (BASE_PATH+"7.bloom.fs").c_str());
-    Shader shaderLight((BASE_PATH+"7.bloom.vs").c_str(), (BASE_PATH+"7.light_box.fs").c_str());
-    Shader shaderBlur((BASE_PATH+"7.blur.vs").c_str(), (BASE_PATH+"7.blur.fs").c_str());
-    Shader shaderBloomFinal((BASE_PATH+"7.bloom_final.vs").c_str(), (BASE_PATH+"7.bloom_final.fs").c_str());
+    // Shader shader((BASE_PATH+"4.normal_mapping.vs").c_str(), (BASE_PATH+"4.normal_mapping.fs").c_str());
+    // Shader shader((BASE_PATH+"5.1.parallax_mapping.vs").c_str(), (BASE_PATH+"5.1.parallax_mapping.fs").c_str());
+    // Shader shader((BASE_PATH+"5.2.parallax_mapping.vs").c_str(), (BASE_PATH+"5.3.parallax_mapping.fs").c_str());
+    // Shader shader((BASE_PATH+"6.lighting.vs").c_str(), (BASE_PATH+"6.lighting.fs").c_str());
+    // Shader hdrShader((BASE_PATH+"6.hdr.vs").c_str(), (BASE_PATH+"6.hdr.fs").c_str());
+    Shader shader((BASE_PATH + "7.bloom.vs").c_str(), (BASE_PATH + "7.bloom.fs").c_str());
+    Shader shaderLight((BASE_PATH + "7.bloom.vs").c_str(), (BASE_PATH + "7.light_box.fs").c_str());
+    Shader shaderBlur((BASE_PATH + "7.blur.vs").c_str(), (BASE_PATH + "7.blur.fs").c_str());
+    Shader shaderBloomFinal((BASE_PATH + "7.bloom_final.vs").c_str(), (BASE_PATH + "7.bloom_final.fs").c_str());
 
     // load textures
     // -------------
+    // unsigned int woodTexture = loadTexture((ASSETS_PATH+"wood.png").c_str());
+    // unsigned int woodTexture = loadTexture((ASSETS_PATH+"wood.png").c_str(), true);
+    // unsigned int diffuseMap = loadTexture((ASSETS_PATH+"bricks2.jpg").c_str());
+    // unsigned int normalMap  = loadTexture((ASSETS_PATH+"bricks2_normal.jpg").c_str());
+    // unsigned int heightMap  = loadTexture((ASSETS_PATH+"bricks2_disp.jpg").c_str());
+    // unsigned int diffuseMap = loadTexture((ASSETS_PATH+"toy_box_diffuse.png").c_str());
+    // unsigned int normalMap  = loadTexture((ASSETS_PATH+"toy_box_normal.png").c_str());
+    // unsigned int heightMap  = loadTexture((ASSETS_PATH+"toy_box_disp.png").c_str());
     unsigned int woodTexture      = loadTexture((ASSETS_PATH + "wood.png").c_str(), true); // note that we're loading the texture as an SRGB texture
     unsigned int containerTexture = loadTexture((ASSETS_PATH + "container2.png").c_str(), true); // note that we're loading the texture as an SRGB texture
 
-    // configure (floating point) framebuffers
-    // ---------------------------------------
+    // configure floating point framebuffer
+    // ------------------------------------
     unsigned int hdrFBO;
     glGenFramebuffers(1, &hdrFBO);
-    glBindFramebuffer(GL_FRAMEBUFFER, hdrFBO);
-    // create 2 floating point color buffers (1 for normal rendering, other for brightness threshold values)
+     // create 2 floating point color buffers (1 for normal rendering, other for brightness threshold values)
     unsigned int colorBuffers[2];
     glGenTextures(2, colorBuffers);
     for (unsigned int i = 0; i < 2; i++)
@@ -121,7 +138,7 @@ int main()
         // attach texture to framebuffer
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, colorBuffers[i], 0);
     }
-    // create and attach depth buffer (renderbuffer)
+    // create depth buffer (renderbuffer)
     unsigned int rboDepth;
     glGenRenderbuffers(1, &rboDepth);
     glBindRenderbuffer(GL_RENDERBUFFER, rboDepth);
@@ -197,6 +214,7 @@ int main()
 
         // render
         // ------
+        // glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -310,6 +328,7 @@ int main()
         renderQuad();
 
         std::cout << "bloom: " << (bloom ? "on" : "off") << "| exposure: " << exposure << std::endl;
+
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
@@ -427,6 +446,7 @@ void renderQuad()
     glBindVertexArray(0);
 }
 
+
 // process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
 // ---------------------------------------------------------------------------------------------------------
 void processInput(GLFWwindow *window)
@@ -456,13 +476,13 @@ void processInput(GLFWwindow *window)
     if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
     {
         if (exposure > 0.0f)
-            exposure -= 0.001f;
+            exposure -= 0.1f;
         else
             exposure = 0.0f;
-    }
+    } 
     else if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
     {
-        exposure += 0.001f;
+        exposure += 0.1f;
     }
 }
 
